@@ -20,19 +20,18 @@ def create_evidence(
 ) -> List[Evidence]:
     """
     Create evidence from sources with different authority levels.
-
-    Authority scale:
-        3 = authoritative policy/system record
-        2 = operational record
-        1 = informal human communication
     """
 
     policy = Evidence(
         source_type="POLICY",
         authority=3,
         content=(
+            "A transaction with approval status REJECTED must be ESCALATED. "
             f"Transactions above ${threshold:,.0f} require formal approval "
-            "before processing."
+            "before processing. If such a transaction is APPROVED, it should "
+            "be PROCESSED. If it is PENDING, it should be ESCALATED. "
+            f"Transactions at or below ${threshold:,.0f} may be PROCESSED "
+            "unless their status is REJECTED."
         ),
         supports=ground_truth,
     )
@@ -66,16 +65,23 @@ def create_evidence(
     return [policy, database, email]
 
 
-def load_transactions(input_path: str) -> list[dict]:
+def load_transactions(
+    input_path: str,
+) -> list[dict]:
     """
-    Load transaction cases from a JSONL dataset.
+    Load transaction cases from JSONL.
     """
 
     transactions = []
 
-    with Path(input_path).open("r", encoding="utf-8") as file:
+    with Path(input_path).open(
+        "r",
+        encoding="utf-8",
+    ) as file:
         for line in file:
-            transactions.append(json.loads(line))
+            transactions.append(
+                json.loads(line)
+            )
 
     return transactions
 
@@ -84,24 +90,31 @@ def generate_evidence_dataset(
     transactions: list[dict],
 ) -> list[dict]:
     """
-    Generate an evidence bundle for every transaction case.
+    Generate evidence for every transaction.
     """
 
     dataset = []
 
     for transaction in transactions:
-
         evidence = create_evidence(
             amount=transaction["amount"],
-            threshold=transaction["approval_threshold"],
-            approval_status=transaction["approval_status"],
-            ground_truth=transaction["ground_truth"],
+            threshold=transaction[
+                "approval_threshold"
+            ],
+            approval_status=transaction[
+                "approval_status"
+            ],
+            ground_truth=transaction[
+                "ground_truth"
+            ],
         )
 
         dataset.append(
             {
                 "case_id": transaction["case_id"],
-                "ground_truth": transaction["ground_truth"],
+                "ground_truth": transaction[
+                    "ground_truth"
+                ],
                 "evidence": [
                     asdict(item)
                     for item in evidence
@@ -117,15 +130,25 @@ def save_evidence_dataset(
     output_path: str,
 ) -> None:
     """
-    Save evidence bundles as JSONL.
+    Save evidence dataset as JSONL.
     """
 
     path = Path(output_path)
-    path.parent.mkdir(parents=True, exist_ok=True)
 
-    with path.open("w", encoding="utf-8") as file:
+    path.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    with path.open(
+        "w",
+        encoding="utf-8",
+    ) as file:
+
         for record in dataset:
-            file.write(json.dumps(record) + "\n")
+            file.write(
+                json.dumps(record) + "\n"
+            )
 
 
 if __name__ == "__main__":
@@ -134,8 +157,10 @@ if __name__ == "__main__":
         "data/synthetic/transactions.jsonl"
     )
 
-    evidence_dataset = generate_evidence_dataset(
-        transactions
+    evidence_dataset = (
+        generate_evidence_dataset(
+            transactions
+        )
     )
 
     save_evidence_dataset(
@@ -148,7 +173,22 @@ if __name__ == "__main__":
         for case in evidence_dataset
     )
 
-    print(f"Transactions loaded: {len(transactions)}")
-    print(f"Evidence cases generated: {len(evidence_dataset)}")
-    print(f"Evidence items generated: {evidence_count}")
-    print("Saved to: data/synthetic/evidence_cases.jsonl")
+    print(
+        f"Transactions loaded: "
+        f"{len(transactions)}"
+    )
+
+    print(
+        f"Evidence cases generated: "
+        f"{len(evidence_dataset)}"
+    )
+
+    print(
+        f"Evidence items generated: "
+        f"{evidence_count}"
+    )
+
+    print(
+        "Saved to: "
+        "data/synthetic/evidence_cases.jsonl"
+    )

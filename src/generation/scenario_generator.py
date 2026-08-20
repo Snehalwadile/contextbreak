@@ -18,15 +18,14 @@ def determine_ground_truth(
     approval_threshold: float,
     approval_status: str,
 ) -> str:
-    """
-    Determine the correct action using authoritative business rules.
 
-    Rule:
-    A transaction above the approval threshold must be escalated
-    unless it has already been approved.
-    """
+    if approval_status == "REJECTED":
+        return "ESCALATE"
 
-    if amount > approval_threshold and approval_status != "APPROVED":
+    if (
+        amount > approval_threshold
+        and approval_status == "PENDING"
+    ):
         return "ESCALATE"
 
     return "PROCESS"
