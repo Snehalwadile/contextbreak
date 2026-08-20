@@ -4,6 +4,6 @@ __pycache__/
 .ipynb_checkpoints/
 .env
 .DS_Store
-
+.pytest_cache/
 results/
 data/processed/
